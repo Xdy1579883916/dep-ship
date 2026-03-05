@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, readdir, writeFile } from 'node:fs/promises'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { build } from 'tsdown'
 import ansis from 'ansis'
@@ -8,27 +8,44 @@ import type { DepShipConfig, Manifest } from './types'
 
 export class Generator {
   private readonly config: Required<DepShipConfig>
+  private readonly baseDir: string
 
   constructor(config: DepShipConfig) {
     const root = process.cwd()
+    // 1. 先确定基础工作目录，默认为 .dep-ship
     const baseDir = path.resolve(root, config.baseDir || '.dep-ship')
+    this.baseDir = baseDir
+
+    // 2. 所有产物路径（outDir, tempDir, manifestPath）如果未指定或为相对路径，
+    // 均相对于 baseDir 进行解析，从而确保它们都在 baseDir 内部。
+    const outDir = path.resolve(baseDir, config.outDir || 'dist')
+    const zipConfig = {
+      enable: false,
+      fileName: 'cdn.zip',
+      ...(config.zip || {}),
+    }
 
     this.config = {
-      packagePath: path.resolve(root, 'package.json'),
+      // 源代码 package.json 依然相对于项目根目录
+      packagePath: path.resolve(root, config.packagePath || 'package.json'),
       baseDir,
-      outDir: path.resolve(baseDir, 'dist'),
-      tempDir: path.resolve(baseDir, 'temp'),
-      exclude: [],
-      include: [],
-      tsdownOptions: {},
-      manifestPath: path.resolve(baseDir, 'manifest.json'),
+      // 产物目录：相对于 baseDir
+      outDir,
+      // 临时目录：相对于 baseDir
+      tempDir: path.resolve(baseDir, config.tempDir || 'temp'),
+      // 清单文件：相对于 baseDir
+      manifestPath: path.resolve(baseDir, config.manifestPath || 'manifest.json'),
+
+      exclude: config.exclude || [],
+      include: config.include || [],
+      tsdownOptions: config.tsdownOptions || {},
+      publicPath: config.publicPath,
       zip: {
-        enable: false,
-        fileName: 'cdn.zip',
-        ...(config.zip || {}),
+        ...zipConfig,
+        from: path.resolve(baseDir, zipConfig.from || outDir),
+        to: path.resolve(baseDir, zipConfig.to || zipConfig.fileName || 'cdn.zip'),
       },
-      ...config,
-    }
+    } as Required<DepShipConfig>
   }
 
   /**
@@ -68,7 +85,7 @@ export class Generator {
   }
 
   /**
-   * 生成代理入口文件
+   * 生成入口文件
    */
   private async generateProxyFiles(deps: string[]): Promise<string[]> {
     await this.ensureDir(this.config.tempDir)
@@ -79,7 +96,7 @@ export class Generator {
 
       // 如果文件已存在，则跳过生成，允许用户手动修改代码
       if (existsSync(proxyPath)) {
-        console.log(ansis.dim(`[DepShip] 使用已存在的代理文件: ${proxyPath}`))
+        console.log(ansis.dim(`[DepShip] 使用已存在的入口文件: ${proxyPath}`))
         entryPoints.push(proxyPath)
         continue
       }
@@ -131,16 +148,17 @@ export class Generator {
    * 压缩构建产物
    */
   private async compress() {
-    const { outDir, baseDir, zip } = this.config
+    const { zip } = this.config
     if (!zip.enable) return
 
-    const zipPath = path.resolve(baseDir, zip.fileName || 'cdn.zip')
-    console.log(ansis.blue(`📦 正在生成压缩包: ${zipPath}...`))
+    const from = path.resolve(this.baseDir, zip.from!)
+    const to = path.resolve(this.baseDir, zip.to!)
+    console.log(ansis.blue(`📦 正在生成压缩包: ${to}...`))
 
-    await compressing.zip.compressDir(outDir, zipPath, {
+    await compressing.zip.compressDir(from, to, {
       ignoreBase: true,
     })
-    console.log(ansis.green(`✨ 压缩包已生成：${zipPath}`))
+    console.log(ansis.green(`✨ 压缩包已生成：${zip.to}`))
   }
 
   /**
@@ -148,6 +166,17 @@ export class Generator {
    */
   async run() {
     console.log(ansis.blue('🚀 正在启动 DepShip...'))
+
+    // 0. 清理 baseDir，但保留 tempDir
+    if (existsSync(this.config.baseDir)) {
+      const items = await readdir(this.config.baseDir)
+      for (const item of items) {
+        const fullPath = path.resolve(this.config.baseDir, item)
+        if (fullPath !== this.config.tempDir) {
+          await rm(fullPath, { recursive: true, force: true })
+        }
+      }
+    }
 
     const deps = await this.getDeps()
     if (deps.length === 0) {
@@ -169,10 +198,6 @@ export class Generator {
       shims: true,
       dts: false,
       hash: true,
-      define: {
-        'process.env.NODE_ENV': JSON.stringify('production'),
-        '__VUE_PROD_DEVTOOLS__': JSON.stringify(false),
-      },
       inputOptions: {
         onwarn(warning, handle) {
           if (
@@ -185,14 +210,13 @@ export class Generator {
       },
       outputOptions: {
         legalComments: 'none',
-        entryFileNames: `js/[name].[hash].js`,
-        chunkFileNames: `chunk/[name].[hash].js`,
+        entryFileNames: () => `js/[name].[hash].js`,
+        chunkFileNames: () => `chunk/[name].[hash].js`,
       },
       plugins: [
         this.bundleManifestPlugin(),
       ],
       noExternal: deps,
-      inlineOnly: false,
       ...this.config.tsdownOptions,
     })
 

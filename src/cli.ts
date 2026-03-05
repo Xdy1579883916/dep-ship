@@ -33,7 +33,10 @@ export default defineConfig({
   // 压缩配置 (可选)
   zip: {
     enable: false,
-    fileName: 'cdn.zip',
+    // 压缩源路径 (可选，默认为 dist)
+    from: 'dist',
+    // 压缩目标路径 (可选，默认为 cdn.zip)
+    to: 'cdn.zip',
   },
 })
 `

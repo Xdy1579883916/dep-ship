@@ -1,3 +1,5 @@
+import type { UserConfig } from 'tsdown'
+
 export interface DepShipConfig {
   /** CDN 基础路径，例如 https://your-cdn-path.com/ */
   publicPath: string
@@ -14,7 +16,7 @@ export interface DepShipConfig {
   /** 工作基础目录，用于存放临时文件和构建产物，默认为 .dep-ship */
   baseDir?: string
   /** tsdown 的额外配置 */
-  tsdownOptions?: any
+  tsdownOptions?: UserConfig
   /** Manifest 文件输出路径，默认为 {baseDir}/manifest.json */
   manifestPath?: string
   /** 压缩配置 */
@@ -23,6 +25,10 @@ export interface DepShipConfig {
     enable?: boolean
     /** 压缩输出文件名，基于 baseDir，默认为 cdn.zip */
     fileName?: string
+    /** 压缩源路径，将基于 baseDir 解析；默认为 config.outDir */
+    from?: string
+    /** 压缩目标文件名或全路径，如果指定为文件名，将基于 baseDir 解析；默认为 fileName */
+    to?: string
   }
 }
 
