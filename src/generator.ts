@@ -216,7 +216,7 @@ export class Generator {
       plugins: [
         this.bundleManifestPlugin(),
       ],
-      noExternal: deps,
+      noExternal: /.*/,
       ...this.config.tsdownOptions,
     })
 
