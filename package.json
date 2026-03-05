@@ -1,10 +1,18 @@
 {
   "name": "@dy-kit/dep-ship",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "📦 依赖分发工具：将 npm 依赖预构建为独立的 CDN 资源，优化构建性能与缓存。",
-  "author": "Your Name",
+  "author": "Xdy1579883916",
   "license": "MIT",
+  "homepage": "https://github.com/Xdy1579883916/dep-ship#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Xdy1579883916/dep-ship.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Xdy1579883916/dep-ship/issues"
+  },
   "bin": {
     "dep-ship": "./dist/cli.mjs"
   },
@@ -30,7 +38,8 @@
     "dev": "tsdown --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "release": "bumpp && npm publish"
   },
   "peerDependencies": {
     "tsdown": "*"
