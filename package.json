@@ -1,7 +1,7 @@
 {
   "name": "@dy-kit/dep-ship",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "📦 依赖分发工具：将 npm 依赖预构建为独立的 CDN 资源，优化构建性能与缓存。",
   "author": "Xdy1579883916",
   "license": "MIT",
