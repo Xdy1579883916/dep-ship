@@ -1,5 +1,5 @@
 export interface DepShipConfig {
-  /** CDN 基础路径，例如 https://js-c.etc4.com/tjl/ */
+  /** CDN 基础路径，例如 https://your-cdn-path.com/ */
   publicPath: string
   /** 依赖来源的 package.json 路径，默认为当前目录下的 package.json */
   packagePath?: string
