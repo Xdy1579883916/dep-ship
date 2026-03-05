@@ -1,0 +1,51 @@
+{
+  "name": "@dy-kit/dep-ship",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "📦 依赖分发工具：将 npm 依赖预构建为独立的 CDN 资源，优化构建性能与缓存。",
+  "author": "Your Name",
+  "license": "MIT",
+  "bin": {
+    "dep-ship": "./dist/cli.mjs"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "peerDependencies": {
+    "tsdown": "*"
+  },
+  "dependencies": {
+    "ansis": "^4.2.0",
+    "cac": "^7.0.0",
+    "compressing": "^2.1.0",
+    "jiti": "^2.6.1",
+    "tsdown": "^0.18.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.11.0",
+    "bumpp": "^10.4.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
