@@ -199,24 +199,28 @@ export class Generator {
       dts: false,
       hash: true,
       inputOptions: {
-        onwarn(warning, handle) {
+        onLog(level, log, defaultHandler) {
           if (
-            warning.code === 'EVAL' ||
-            warning.code === 'CIRCULAR_DEPENDENCY' ||
-            warning.code === 'IMPORT_IS_UNDEFINED'
+              log.code === 'EVAL' ||
+              log.code === 'CIRCULAR_DEPENDENCY' ||
+              log.code === 'IMPORT_IS_UNDEFINED'
           ) return
-          handle(warning)
-        },
+          defaultHandler(level, log);
+        }
       },
       outputOptions: {
-        legalComments: 'none',
+        comments: {
+          legal: false
+        },
         entryFileNames: () => `js/[name].[hash].js`,
         chunkFileNames: () => `chunk/[name].[hash].js`,
       },
       plugins: [
         this.bundleManifestPlugin(),
       ],
-      noExternal: /.*/,
+      deps: {
+        alwaysBundle: /.*/,
+      },
       ...this.config.tsdownOptions,
     })
 
