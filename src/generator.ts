@@ -188,6 +188,13 @@ export class Generator {
 
     console.log(ansis.blue(`📦 正在预构建 ${deps.length} 个依赖...`))
 
+    const userTsdownOptions = this.config.tsdownOptions || {}
+    const userPlugins = Array.isArray(userTsdownOptions.plugins)
+      ? userTsdownOptions.plugins
+      : userTsdownOptions.plugins
+        ? [userTsdownOptions.plugins]
+        : []
+
     await build({
       entry: entryPoints,
       format: ['esm'],
@@ -198,6 +205,7 @@ export class Generator {
       shims: true,
       dts: false,
       hash: true,
+      ...userTsdownOptions,
       inputOptions: {
         onLog(level, log, defaultHandler) {
           if (
@@ -206,7 +214,8 @@ export class Generator {
               log.code === 'IMPORT_IS_UNDEFINED'
           ) return
           defaultHandler(level, log);
-        }
+        },
+        ...(userTsdownOptions.inputOptions || {}),
       },
       outputOptions: {
         comments: {
@@ -214,14 +223,16 @@ export class Generator {
         },
         entryFileNames: () => `js/[name].[hash].js`,
         chunkFileNames: () => `chunk/[name].[hash].js`,
+        ...(userTsdownOptions.outputOptions || {}),
       },
       plugins: [
+        ...userPlugins,
         this.bundleManifestPlugin(),
       ],
       deps: {
         alwaysBundle: /.*/,
+        ...(userTsdownOptions.deps || {}),
       },
-      ...this.config.tsdownOptions,
     })
 
     console.log(ansis.green('✨ 构建成功完成！'))
